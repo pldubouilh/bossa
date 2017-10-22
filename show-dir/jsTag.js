@@ -154,7 +154,51 @@ document.ondrop = (e) => {
   return false
 }
 
+function arrow (down) {
+  const all = Array.from(document.querySelectorAll('i.arrow-icon'))
+  let i = all.findIndex(el => el.classList.contains('arrow-selected'))
+
+  if (all[i] && all[i].classList) {
+    all[i].classList.remove('arrow-selected')
+  }
+
+  if (down) {
+    i = all[i + 1] ? i + 1 : 0
+  } else {
+    i = all[i - 1] ? i - 1 : all.length - 1
+  }
+
+  window.localStorage.setItem('last-selected' + window.location.href, i.toString())
+  all[i].classList.add('arrow-selected')
+}
+
+document.body.onkeydown = e => {
+  if (e.code.includes('ArrowDown') || e.code.includes('Tab')) {
+    e.preventDefault()
+    arrow(true)
+  } else if (e.code.includes('ArrowUp')) {
+    arrow(false)
+  } else if (e.code.includes('Enter') || e.code.includes('ArrowRight')) {
+    const dest = document.querySelectorAll('i.arrow-selected')[0]
+    const a = dest.parentElement.parentElement.querySelectorAll('a')[0]
+    window.location.href = a.href
+  } else if (e.code.includes('ArrowLeft')) {
+    if (window.location.origin === window.location.href.slice(0, -1)) { return }
+    const path = window.location.pathname.split('/')
+    path.pop()
+    path.pop()
+    window.location.href = window.location.origin + path.join('/')
+  }
+}
+
+function init () {
+  const all = Array.from(document.querySelectorAll('i.arrow-icon'))
+  const i = window.localStorage.getItem('last-selected' + window.location.href)
+  all[i].classList.add('arrow-selected')
+
+  console.log('File upload set')
+}
+
 let totalUploads = 0
 let totalDone = 0
-
-console.log('File upload set')
+init()

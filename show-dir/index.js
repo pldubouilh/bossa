@@ -57,6 +57,7 @@ function render (parsed, pathname, dirs, files) {
     html += `<tr>
               <td><i class="btn icon icon-${iconClass} icon-blank"></i></td>
               <td class="file-size"><code>${sizeString}</code></td>
+              <td class="arrow"><i class="arrow-icon"></i></td>
               <td class="display-name"><a href="${href}">${displayName}</a></td>
             </tr>`
   }
