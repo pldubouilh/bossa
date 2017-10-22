@@ -1,6 +1,7 @@
 node_modules
 package-lock.json
 
+tests/fixture/*
 tests/fixture/*/*
 !tests/fixture/scripts
 !tests/fixture/compress/foo*

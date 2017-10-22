@@ -1,1 +1,1 @@
-exports.foo = "baz";
+exports.foo = 'baz'
