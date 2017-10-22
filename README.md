@@ -18,6 +18,11 @@ e.g. bossa ~/Documents
      bossa -l 127.0.0.1 -p 9090 ~/Documents
 ```
 
+### Install
+```
+npm i -g bossa
+```
+
 ### Benchmark
 It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmarks are to come.
 
@@ -31,3 +36,4 @@ It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmar
 - [ ] Allow more file handling (remove)
 - [ ] Password protect ? (implies TLS)
 - [ ] Style (image slider, etc...) ?
+ 
