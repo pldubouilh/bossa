@@ -168,37 +168,77 @@ function arrow (down) {
     i = all[i - 1] ? i - 1 : all.length - 1
   }
 
-  window.localStorage.setItem('last-selected' + window.location.href, i.toString())
   all[i].classList.add('arrow-selected')
-}
+  window.localStorage.setItem('last-selected' + window.location.href, getASelected().innerText)
 
-document.body.onkeydown = e => {
-  if (e.code.includes('ArrowDown') || e.code.includes('Tab')) {
-    e.preventDefault()
-    arrow(true)
-  } else if (e.code.includes('ArrowUp')) {
-    arrow(false)
-  } else if (e.code.includes('Enter') || e.code.includes('ArrowRight')) {
-    const dest = document.querySelectorAll('i.arrow-selected')[0]
-    const a = dest.parentElement.parentElement.querySelectorAll('a')[0]
-    window.location.href = a.href
-  } else if (e.code.includes('ArrowLeft')) {
-    if (window.location.origin === window.location.href.slice(0, -1)) { return }
-    const path = window.location.pathname.split('/')
-    path.pop()
-    path.pop()
-    window.location.href = window.location.origin + path.join('/')
+  const itemPos = all[i].getBoundingClientRect()
+
+  if (i === 0) {
+    window.scrollTo(0, 0)
+  } else if (i === all.length - 1) {
+    window.scrollTo(0, document.documentElement.scrollHeight)
+  } else if (itemPos.top < 0) {
+    window.scrollBy(0, -150)
+  } else if (itemPos.bottom > window.innerHeight) {
+    window.scrollBy(0, 150)
   }
 }
 
-function init () {
-  const all = Array.from(document.querySelectorAll('i.arrow-icon'))
-  const i = window.localStorage.getItem('last-selected' + window.location.href)
-  all[i].classList.add('arrow-selected')
+function getASelected () {
+  const dest = document.querySelectorAll('i.arrow-selected')[0]
+  return dest.parentElement.parentElement.querySelectorAll('a')[0]
+}
 
-  console.log('File upload set')
+function next () {
+  window.location.href = getASelected().href
+}
+
+function prev () {
+  if (window.location.origin === window.location.href.slice(0, -1)) { return }
+
+  const path = window.location.pathname.split('/')
+  path.pop()
+  path.pop()
+  window.location.href = window.location.origin + path.join('/')
+}
+
+function cpPath () {
+  var t = document.createElement('textarea')
+  t.value = getASelected().href
+  document.body.appendChild(t)
+  t.select()
+  document.execCommand('copy')
+  document.body.removeChild(t)
+}
+
+document.body.onkeydown = e => {
+  e.preventDefault()
+
+  if (e.code === 'ArrowDown' || e.code === 'Tab') {
+    arrow(true)
+  } else if (e.code === 'ArrowUp') {
+    arrow(false)
+  } else if (e.code === 'Enter' || e.code === 'ArrowRight') {
+    next()
+  } else if (e.code === 'ArrowLeft') {
+    prev()
+  } else if (e.code === 'KeyN') {
+    mkdir()
+  } else if (e.code === 'KeyC') {
+    cpPath()
+  }
+}
+
+function restoreCursorPos () {
+  const name = window.localStorage.getItem('last-selected' + window.location.href)
+  const elt = Array.from(document.querySelectorAll('a')).find(el => el.innerText === name)
+  if (elt) {
+    const icon = elt.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
+    icon.classList.add('arrow-selected')
+  }
 }
 
 let totalUploads = 0
 let totalDone = 0
-init()
+restoreCursorPos()
+console.log('File upload set')
