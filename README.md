@@ -1,4 +1,5 @@
 # Bossa
+[![Build Status](https://travis-ci.org/pldubouilh/bossa.svg?branch=master)](https://travis-ci.org/pldubouilh/bossa)
 
 ![](https://thumbs.gfycat.com/ScientificLoathsomeFruitfly-size_restricted.gif)
 
@@ -31,6 +32,7 @@ It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmar
 - [x] Mkdir
 - [x] Prompt if file already exists
 - [x] Some tests
+- [ ] Keyboard shortcuts
 - [ ] More tests
 - [ ] Babel client script code
 - [ ] Allow more file handling (remove)
