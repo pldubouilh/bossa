@@ -1,0 +1,22 @@
+node_modules
+package-lock.json
+
+tests/fixture/*/*
+!tests/fixture/scripts
+!tests/fixture/compress/foo*
+!tests/fixture/curimit@gmail.com (40%)/index.html
+!tests/fixture/gzip/fake_ecstatic*
+!tests/fixture/gzip/index*
+!tests/fixture/gzip/real_ecstatic
+!tests/fixture/show-dir$$href_encoding$$/aname+aplus.txt
+!tests/fixture/subdir/e.html
+!tests/fixture/subdir/index.html
+!tests/fixture/subdir_with space/file_with space.html
+!tests/fixture/subdir_with space/index.html
+!tests/fixture/中文/檔案.html
+!tests/fixture/404*
+!tests/fixture/a.txt
+!tests/fixture/b.txt
+!tests/fixture/c.js
+!tests/fixture/custom_mime_type*
+!tests/fixture/f_f
