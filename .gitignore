@@ -3,7 +3,7 @@ package-lock.json
 
 tests/fixture/*
 tests/fixture/*/*
-!tests/fixture/scripts
+!tests/fixture/another-subdir/scripts.js
 !tests/fixture/compress/foo*
 !tests/fixture/curimit@gmail.com (40%)/index.html
 !tests/fixture/gzip/fake_ecstatic*

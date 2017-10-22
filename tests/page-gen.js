@@ -1,17 +1,15 @@
 const test = require('tape')
 const request = require('request')
 
-const defaultBody = `<body>
+const trimSpaces = e => e.replace(/\r?\n|\r/g, '').replace(/\s{2,}/g, ' ')
+
+const defaultBody = trimSpaces(`<body>
     <div onclick="window.mkdir()" id="newFolder"></div>
     <div id="drop-grid"> Drop here to upload </div>
     <div id="progressBars"></div>
     <h1>./</h1>
     <table>
   <tr>
-              <td><i class="btn icon icon-folder icon-blank"></i></td>
-              <td class="file-size"><code>0</code></td>
-              <td class="display-name"><a href="/another-subdir/">another-subdir/</a></td>
-            </tr><tr>
               <td><i class="btn icon icon-folder icon-blank"></i></td>
               <td class="file-size"><code>0</code></td>
               <td class="display-name"><a href="/compress/">compress/</a></td>
@@ -71,14 +69,14 @@ const defaultBody = `<body>
               <td><i class="btn icon icon-f_f icon-blank"></i></td>
               <td class="file-size"><code>0.0k</code></td>
               <td class="display-name"><a href="/f_f">f_f</a></td>
-            </tr></table>`
+            </tr></table>`)
 
 test('HTTP GET to http://127.0.0.1:9991', function (t) {
   t.plan(1)
 
   request('http://127.0.0.1:9991', (e, resp, body) => {
     if (e) { return t.fail(e) }
-
+    body = trimSpaces(body)
     if (body.includes(defaultBody)) {
       t.pass('HTTP GET provides test folder')
     } else {
