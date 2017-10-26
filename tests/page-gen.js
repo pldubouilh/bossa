@@ -1,5 +1,7 @@
 const test = require('tape')
-const request = require('request')
+const request = require('request-promise-native')
+const fs = require('fs-extra')
+const path = require('path')
 
 const trimSpaces = e => e.replace(/\r?\n|\r/g, '').replace(/\s{2,}/g, ' ')
 
@@ -71,16 +73,51 @@ const defaultBody = trimSpaces(`<body>
               <td class="display-name"><a href="/f_f">f_f</a></td>
             </tr></table>`)
 
-test('HTTP GET to http://127.0.0.1:9991', function (t) {
-  t.plan(1)
+const headers = { Referer: 'http://127.0.0.1:9991/' }
+const formData = { file: fs.createReadStream(path.join(__dirname, '/page-gen.js')) }
 
-  request('http://127.0.0.1:9991', (e, resp, body) => {
-    if (e) { return t.fail(e) }
-    body = trimSpaces(body)
-    if (body.includes(defaultBody)) {
-      t.pass('HTTP GET provides test folder')
-    } else {
-      t.fail('Fail')
-    }
-  })
+test('HTTP GET list', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request('http://127.0.0.1:9991')
+    if (trimSpaces(body).includes(defaultBody)) { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP GET file', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request('http://127.0.0.1:9991/subdir_with%20space/index.html')
+    if (trimSpaces(body) === 'index :)') { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP GET to utf8 file', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request('http://127.0.0.1:9991/%E4%B8%AD%E6%96%87/%E6%AA%94%E6%A1%88.html')
+    if (trimSpaces(body) === '<b>file!!</b>') { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST Mkdir', async function (t) {
+  t.plan(2)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/mkdir/a', headers })
+    if (body === 'done') { t.pass('') }
+
+    const s = await fs.stat(path.join(__dirname, '/fixture/a'))
+    if (s.isDirectory()) { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST File', async function (t) {
+  t.plan(2)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/post/testfile.js', headers, formData })
+    if (body === 'done') { t.pass('') }
+
+    const s = await fs.stat(path.join(__dirname, '/fixture/testfile.js'))
+    if (s.isFile()) { t.pass('') }
+  } catch (error) { t.fail(error) }
 })
