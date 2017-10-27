@@ -1,11 +1,17 @@
 {
   "name": "bossa",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "Fast and simple http server that allows slightly more",
   "main": "index.js",
   "bin": {
     "bossa": "./index.js"
   },
+  "keywords": [
+    "samba",
+    "local",
+    "remote",
+    "server"
+  ],
   "engines": {
     "node": ">=8"
   },
@@ -13,7 +19,7 @@
     "dev": "nodemon -i tests/fixture index.js -p 9991 tests/fixture",
     "start": "./index.js -p 9991 tests/fixture &",
     "stop": "kill `lsof -ti tcp:9991`",
-    "tape": "node tests/*.js && npm run clear-testfiles",
+    "tape": "npm run clear-testfiles && node tests/*.js",
     "clear-testfiles": "rm -rf tests/fixture/a tests/fixture/testfile.js",
     "test": "npm run start && sleep 2 && npm run tape && npm run stop",
     "lint": "standard"
