@@ -33,7 +33,7 @@ It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmar
 - [x] Prompt if file already exists
 - [x] Some tests
 - [ ] Keyboard shortcuts
-- [ ] More tests
+- [x] More tests
 - [ ] Babel client script code
 - [ ] Allow more file handling (remove)
 - [ ] Password protect ? (implies TLS)
