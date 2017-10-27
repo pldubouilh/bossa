@@ -24,6 +24,11 @@ e.g. bossa ~/Documents
 npm i -g bossa
 ```
 
+### Keyboard shortcuts
+ * Arrows to browse through the files and pictures
+ * C to copy path to clipboard
+ * N to create directory
+
 ### Benchmark
 It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmarks are to come.
 
@@ -32,10 +37,10 @@ It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmar
 - [x] Mkdir
 - [x] Prompt if file already exists
 - [x] Some tests
-- [ ] Keyboard shortcuts
-- [x] More tests
+- [x] Keyboard shortcuts
+- [x] Image slideshow
+- [ ] More tests
 - [ ] Babel client script code
 - [ ] Allow more file handling (remove)
 - [ ] Password protect ? (implies TLS)
-- [ ] Style (image slider, etc...) ?
- 
+

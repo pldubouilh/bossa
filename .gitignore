@@ -21,3 +21,11 @@ tests/fixture/*/*
 !tests/fixture/c.js
 !tests/fixture/custom_mime_type*
 !tests/fixture/f_f
+!tests/fixture/hols
+!tests/fixture/hols/c.js
+!tests/fixture/hols/adler-2872995_1920.jpg
+!tests/fixture/hols/elephant-1822636_1920.jpg
+!tests/fixture/hols/glasgow.jpg
+!tests/fixture/hols/landscape-540116_1920.jpg
+!tests/fixture/hols/scotland-1761292_1920.jpg
+

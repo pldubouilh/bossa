@@ -3,18 +3,9 @@ function cancelDefault (e) {
   e.stopPropagation()
 }
 
-const parseDirRowTxt = el => {
-  const parsed = el.innerText.split('0	')[1] // eslint-disable-line
-  return parsed ? parsed.replace('/', '') : ''
-}
+const allA = Array.from(document.querySelectorAll('a'))
 
-const checkDupes = test => {
-  const table = Array.from(document.querySelectorAll('tbody')[0].rows)
-  return table.find(el => {
-    let parsed = el.children[2].innerText
-    return parsed.replace && (parsed.replace('/', '') === test)
-  })
-}
+const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
 const invalidName = f => f.includes('/') || f.includes('\\') || f.includes('.')
 
@@ -31,21 +22,9 @@ function mkdir () {
 
   const xhr = new window.XMLHttpRequest()
   xhr.open('POST', window.location.origin + '/mkdir/' + folder)
-  xhr.onload = () => {
-    const table = document.querySelectorAll('tbody')[0]
-    const index = 1 + Array.from(table.rows).findIndex(el => folder > parseDirRowTxt(el))
-    table.insertRow(index || 1).innerHTML = `
-      <tr>
-        <td><i class="icon icon-folder"></i></td>
-        <td class="file-size"><code>0</code></td>
-        <td class="display-name"><a href="${window.location.pathname + folder}/">${folder}/</a></td>
-      </tr>`
-  }
-
+  xhr.onload = () => window.location.reload()
   xhr.send()
 }
-
-window.mkdir = mkdir
 
 function warning (e) {
   return 'Leaving will interrupt transfer\nAre you sure you want to leave?'
@@ -131,6 +110,7 @@ function pushEntry (entry) {
 const upGrid = document.getElementById('drop-grid')
 
 document.ondragenter = (e) => {
+  if (isPicMode()) { return }
   cancelDefault(e)
   e.dataTransfer.dropEffect = 'copy'
   upGrid.style.display = 'flex'
@@ -157,4 +137,170 @@ document.ondrop = (e) => {
 let totalUploads = 0
 let totalDone = 0
 
+function getASelected () {
+  const dest = document.querySelectorAll('i.arrow-selected')[0]
+  return !dest ? false : dest.parentElement.parentElement.querySelectorAll('a')[0]
+}
+
+function clearArrowSelected () {
+  const arr = document.querySelectorAll('.arrow-selected')[0]
+  if (!arr) { return }
+  arr.classList.remove('arrow-selected')
+}
+
+function restoreCursorPos () {
+  clearArrowSelected()
+  const hrefSelected = window.localStorage.getItem('last-selected' + window.location.href)
+  const elt = allA.find(el => el.href === hrefSelected)
+  if (!elt) { return }
+  const icon = elt.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
+  icon.classList.add('arrow-selected')
+}
+
+function arrow (down) {
+  const all = Array.from(document.querySelectorAll('i.arrow-icon'))
+  let i = all.findIndex(el => el.classList.contains('arrow-selected'))
+
+  clearArrowSelected()
+
+  if (down) {
+    i = all[i + 1] ? i + 1 : 0
+  } else {
+    i = all[i - 1] ? i - 1 : all.length - 1
+  }
+
+  all[i].classList.add('arrow-selected')
+  window.localStorage.setItem('last-selected' + window.location.href, getASelected().href)
+
+  const itemPos = all[i].getBoundingClientRect()
+
+  if (i === 0) {
+    window.scrollTo(0, 0)
+  } else if (i === all.length - 1) {
+    window.scrollTo(0, document.documentElement.scrollHeight)
+  } else if (itemPos.top < 0) {
+    window.scrollBy(0, -150)
+  } else if (itemPos.bottom > window.innerHeight) {
+    window.scrollBy(0, 150)
+  }
+}
+
+function next () {
+  if (getASelected().href) {
+    window.location.href = getASelected().href
+  }
+}
+
+function prev () {
+  if (window.location.origin === window.location.href.slice(0, -1)) { return }
+
+  const path = window.location.pathname.split('/')
+  path.pop()
+  path.pop()
+  window.location.href = window.location.origin + path.join('/')
+}
+
+function cpPath () {
+  var t = document.createElement('textarea')
+  t.value = getASelected().href
+  document.body.appendChild(t)
+  t.select()
+  document.execCommand('copy')
+  document.body.removeChild(t)
+}
+
+const pics = document.getElementById('pics')
+const picsHolder = document.getElementById('picsHolder')
+const picsLabel = document.getElementById('picsLabel')
+
+const picTypes = ['.jpg', '.jpeg', '.png', '.gif']
+const isPic = src => src && picTypes.find(type => src.toLocaleLowerCase().includes(type))
+
+const isPicMode = () => pics.style.display === 'flex'
+
+let imgsIndex = 0
+const allImgs = allA.map(el => el.href).filter(isPic)
+if (allImgs.length === 0) {
+  document.getElementById('picsToggle').style.display = 'none'
+}
+
+function setImage (src) {
+  src = src || allImgs[imgsIndex]
+  picsLabel.innerText = src.split('/').pop()
+  picsHolder.src = src
+  window.localStorage.setItem('last-selected' + window.location.href, src)
+}
+
+function picsOn (ifImgSelected) {
+  const href = getASelected().href
+
+  if (isPicMode()) {
+    return false
+  } else if (ifImgSelected && !isPic(href)) {
+    return false
+  }
+
+  if (isPic(href)) {
+    imgsIndex = allImgs.findIndex(el => el === href)
+    setImage()
+  } else {
+    setImage(picsHolder.src)
+  }
+
+  pics.style.display = 'flex'
+  return true
+}
+
+function picsToggle () {
+  if (!isPicMode()) {
+    picsOn()
+  } else {
+    pics.style.display = 'none'
+    restoreCursorPos()
+  }
+}
+
+function picsNav (down) {
+  if (!isPicMode()) { return false }
+
+  if (down) {
+    imgsIndex = allImgs[imgsIndex + 1] ? imgsIndex + 1 : 0
+  } else {
+    imgsIndex = allImgs[imgsIndex - 1] ? imgsIndex - 1 : allImgs.length - 1
+  }
+
+  setImage()
+  return true
+}
+
+document.body.onkeydown = e => {
+  if (e.code === 'ArrowDown' || e.code === 'Tab') {
+    e.preventDefault()
+    picsNav(true) || arrow(true)
+  } else if (e.code === 'ArrowUp') {
+    e.preventDefault()
+    picsNav(false) || arrow(false)
+  } else if (e.code === 'Enter' || e.code === 'ArrowRight') {
+    e.preventDefault()
+    picsOn(true) || picsNav(true) || next()
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault()
+    picsNav(false) || prev()
+  } else if (e.code === 'KeyN') {
+    e.preventDefault()
+    isPicMode() || mkdir()
+  } else if (e.code === 'KeyC') {
+    e.preventDefault()
+    isPicMode() || cpPath()
+  } else if (e.code === 'Escape' && isPicMode()) {
+    e.preventDefault()
+    picsToggle()
+  }
+}
+
+window.picsToggle = picsToggle
+window.picsNav = () => picsNav(true)
+window.mkdir = mkdir
+
+restoreCursorPos()
 console.log('File upload set')

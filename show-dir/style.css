@@ -6,13 +6,31 @@
   margin: 1px;
 }
 
+.arrow-icon {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.arrow-selected {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAzElEQVQ4T2NkoDJgpLJ5DHQ1kA3oehD+Qoov8LmwBmiQDxB7AfE7Yg3FZyDIdUuAWAuI3YD4GTGGEgpDZqAhM4DYCYhdgfgeIUMJGQjSD1LTBcTRUJdewWcoMQbCDK0EMoqhYXoSl6HEGgjTnw1ktANxEBDvwWYoqQbmAA1pA+JAIN5LiYEgi0HJqIAaXgYZ1gvEEdSIFBagIbOA2J4ayYYdaMgyIFaDuuw5oTQISw641NUCJbyhYUa1rEfVwoEYH2KoITUdErSE6gYCADLQGhW8pB3+AAAAAElFTkSuQmCC");
+}
+
+.arrow {
+  height: 20px;
+  width: 20px;
+  padding-top: 3px;
+  padding-left: 0.3em;
+  display: block;
+}
+
 td.file-size {
   text-align: right;
   padding-left: 1em;
 }
 
 td.display-name {
-  padding-left: 1em;
+  padding-left: 0.2em;
 }
 
 #newFolder {
@@ -23,6 +41,27 @@ td.display-name {
   width: 32px;
   height: 32px;
   cursor: pointer;
+}
+
+#picsToggle {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABxUlEQVRYR+2XyyuFQRjGz3HPNfIPiEL5D0RYyNJeVlYuycIlf4EkSRQLG1bWkrKwo7BSyg5LZUW533+PZvQ1nL7jO2echTP1NDPffO/7POed55vmxGMZbvEM88eyAoIVGGY7pkCx5225I/8EWBRPUMAN8xLP5Db9LYNSV8C7Wa2lP/MkpJG8Jyb3548PVsAK8GnMIjjvfQsohGAW9BqiNfpR8Ai09uBbgMw16GzhAnOZ/E8EXENU7gi4Yl4JCkwlvrbfhwcyLkDlHnIqMM98BOSDp1Q80ETwtjFSJ/2pQ6Sp9nkmYMJVxuOGOCUB1SQ5BDWG9Jy+GVz8ICLRozwWnqNUQMp3QIuT+Zh5K5DJbLO+sudKMCSygBWy9CX4WXs813bojK8HG+AFtINLJybXrOlx0iehzDMXUuZd1rfAGNDnpnYE2oC+Ctt+LaCLyE2gwChNwlQde/zmMH41iUIr0MCL+6AiCnMgRpXpBjJf0gKqePkA1KVIbsPXGfQAGfMtrAJyvL71jjSR2zTLDAaSEbDES/1pJrfpdOOaDKuAJ+5vaROa8P8K+MtLqbjKVOrgfUC3mGng+2asG7FOTJk9+88oW4HYB/NaXyF6NJlmAAAAAElFTkSuQmCC");
+  position: fixed;
+  right: 60px;
+  top: 20px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+#picsToggleCinema {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAoElEQVRYhe2Wuw3AIAxEbZRRMwFlJiBLMCBDcClCCwq2gRRc7/cO8RFEOzt/DAAPIABwBixXWL5nKOBN1JQo8lhYQTooKqFmaAAWCxCDzOQSoLm8BzxM/kUwXN4STZM3SsyTV0qo5HMaW2bpFiw9hEuv4dKHqAdsXkICNCuhAalLWKxCxcDEL9lRmU1EdBPRxcxZWoCZM4Cz8JKUs7MzNA81r4TL7qAyXAAAAABJRU5ErkJggg==");
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  z-index: 101;
 }
 
 .icon-folder{
@@ -83,6 +122,38 @@ td.display-name {
   color: green;
   opacity: 0.8;
   backdrop-filter: grayscale(100%);
+}
+
+#pics {
+  justify-content:center;
+  align-items:center;
+  position: fixed;
+  background-color: #000;
+  top: 0px;
+  bottom: 25px;
+  left: 0px;
+  right: 0px;
+  overflow: hidden;
+  z-index: 99;
+}
+
+#picsLabel {
+  font-size: 25px;
+  color: darkgray;
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background-color: black;
+  font-family: helvetica;
+}
+
+#picsHolder {
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+  object-fit: contain;
+  image-orientation: from-image;
 }
 
 .icon-blank {

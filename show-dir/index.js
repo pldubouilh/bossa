@@ -31,6 +31,8 @@ function render (parsed, pathname, dirs, files) {
   </head>
   <body>
     <div onclick="window.mkdir()" id="newFolder"></div>
+    <div onclick="window.picsToggle()" id="picsToggle"></div>
+    <div id="pics" style="display:none;"> <div onclick="window.picsToggle()" id="picsToggleCinema"></div> <img  onclick="window.picsNav()" id="picsHolder"/> <span id="picsLabel"></span> </div>
     <div id="drop-grid"> Drop here to upload </div>
     <div id="progressBars"></div>
     <h1>.${he.encode(pathname)}</h1>
@@ -57,6 +59,7 @@ function render (parsed, pathname, dirs, files) {
     html += `<tr>
               <td><i class="btn icon icon-${iconClass} icon-blank"></i></td>
               <td class="file-size"><code>${sizeString}</code></td>
+              <td class="arrow"><i class="arrow-icon"></i></td>
               <td class="display-name"><a href="${href}">${displayName}</a></td>
             </tr>`
   }
