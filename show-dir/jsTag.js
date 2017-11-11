@@ -3,7 +3,7 @@ function cancelDefault (e) {
   e.stopPropagation()
 }
 
-const allA = Array.from(document.querySelectorAll('a'))
+let allA = Array.from(document.querySelectorAll('a'))
 
 const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
@@ -51,10 +51,13 @@ function updatePercent (id, percent) {
 
 function shouldRefresh () {
   totalDone += 1
-
   if (totalUploads === totalDone) {
     window.onbeforeunload = null
-    window.location.reload()
+    console.log('Done uploading ' + totalDone + ' files')
+    totalDone = 0
+    totalUploads = 0
+    document.getElementById('progressBars').innerHTML = ''
+    browseTo(window.location.href)
   }
 }
 
@@ -142,6 +145,11 @@ function getASelected () {
   return !dest ? false : dest.parentElement.parentElement.querySelectorAll('a')[0]
 }
 
+function scrollToArrow () {
+  const pos = document.querySelectorAll('.arrow-selected')[0].getBoundingClientRect()
+  window.scrollTo(0, pos.y)
+}
+
 function clearArrowSelected () {
   const arr = document.querySelectorAll('.arrow-selected')[0]
   if (!arr) { return }
@@ -151,8 +159,16 @@ function clearArrowSelected () {
 function restoreCursorPos () {
   clearArrowSelected()
   const hrefSelected = window.localStorage.getItem('last-selected' + window.location.href)
-  const a = allA.find(el => el.href === hrefSelected)
-  if (!a) { return }
+  let a = allA.find(el => el.href === hrefSelected)
+
+  if (!a) {
+    if (allA[0].innerText === '../') {
+      a = allA[1]
+    } else {
+      a = allA[0]
+    }
+  }
+
   const icon = a.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
   icon.classList.add('arrow-selected')
 }
@@ -181,9 +197,9 @@ function arrow (down) {
   } else if (i === all.length - 1) {
     window.scrollTo(0, document.documentElement.scrollHeight)
   } else if (itemPos.top < 0) {
-    window.scrollBy(0, -150)
+    window.scrollBy(0, -200)
   } else if (itemPos.bottom > window.innerHeight) {
-    window.scrollBy(0, 150)
+    window.scrollBy(0, 200)
   }
 }
 
@@ -192,18 +208,35 @@ function setCursorToClosest () {
   if (!a) { return }
   storeLastArrowSrc(a.href)
   restoreCursorPos()
+  scrollToArrow()
+}
+
+function browseTo (href) {
+  window.fetch(href).then(r => r.text().then(t => {
+    const parsed = new window.DOMParser().parseFromString(t, 'text/html')
+
+    const table = parsed.querySelectorAll('table')[0].innerHTML
+    document.body.querySelectorAll('table')[0].innerHTML = table
+
+    const title = parsed.head.querySelectorAll('title')[0].innerText
+    document.head.querySelectorAll('title')[0].innerText = title
+    document.body.querySelectorAll('h1')[0].innerText = '.' + title
+
+    window.history.pushState(title, title, title)
+    init()
+  }))
 }
 
 function next () {
-  if (getASelected().href) {
-    window.location.href = getASelected().href
-  }
+  const href = getASelected().href
+  if (!href) { return }
+  browseTo(href)
 }
 
 function prev () {
   if (window.location.origin === window.location.href.slice(0, -1)) { return }
-  const path = window.location.pathname.split('/').slice(0, -2)
-  window.location.href = window.location.origin + path.join('/')
+  const path = window.location.pathname.split('/').slice(0, -2).join('/')
+  browseTo(window.location.origin + path)
 }
 
 function cpPath () {
@@ -224,11 +257,8 @@ const isPic = src => src && picTypes.find(type => src.toLocaleLowerCase().includ
 
 const isPicMode = () => pics.style.display === 'flex'
 
-let imgsIndex = 0
-const allImgs = allA.map(el => el.href).filter(isPic)
-if (allImgs.length === 0) {
-  document.getElementById('picsToggle').style.display = 'none'
-}
+let imgsIndex
+let allImgs
 
 function setImage (src) {
   src = src || allImgs[imgsIndex]
@@ -263,6 +293,7 @@ function picsToggle () {
   } else {
     pics.style.display = 'none'
     restoreCursorPos()
+    scrollToArrow()
   }
 }
 
@@ -330,9 +361,29 @@ document.body.addEventListener('keydown', e => {
   }
 }, false)
 
+function partialBrowseOnClickFolders () {
+  allA.forEach(a => {
+    if (!a.innerText.endsWith('/')) { return }
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      browseTo(e.target.href)
+    })
+  }, false)
+}
+
+function init () {
+  allA = Array.from(document.querySelectorAll('a'))
+  allImgs = allA.map(el => el.href).filter(isPic)
+  document.getElementById('picsToggle').style.display = allImgs.length > 0 ? 'flex' : 'none'
+
+  imgsIndex = 0
+  partialBrowseOnClickFolders()
+  restoreCursorPos()
+  console.log('Browsed to ' + window.location.href)
+}
+
+init()
+
 window.picsToggle = picsToggle
 window.picsNav = () => picsNav(true)
 window.mkdir = mkdir
-
-restoreCursorPos()
-console.log('File upload set')

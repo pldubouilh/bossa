@@ -58,7 +58,6 @@ module.exports = async function resolve (rootFolder, req, res) {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width">
       <title>${he.encode(pathname)}</title>
-      <title>${he.encode(pathname)}</title>
       <script>window.onload = function(){${jsTag}}</script>
       <style type="text/css">${css}</style>
     </head>
