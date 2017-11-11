@@ -151,11 +151,13 @@ function clearArrowSelected () {
 function restoreCursorPos () {
   clearArrowSelected()
   const hrefSelected = window.localStorage.getItem('last-selected' + window.location.href)
-  const elt = allA.find(el => el.href === hrefSelected)
-  if (!elt) { return }
-  const icon = elt.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
+  const a = allA.find(el => el.href === hrefSelected)
+  if (!a) { return }
+  const icon = a.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
   icon.classList.add('arrow-selected')
 }
+
+const storeLastArrowSrc = src => window.localStorage.setItem('last-selected' + window.location.href, src)
 
 function arrow (down) {
   const all = Array.from(document.querySelectorAll('i.arrow-icon'))
@@ -170,7 +172,7 @@ function arrow (down) {
   }
 
   all[i].classList.add('arrow-selected')
-  window.localStorage.setItem('last-selected' + window.location.href, getASelected().href)
+  storeLastArrowSrc(getASelected().href)
 
   const itemPos = all[i].getBoundingClientRect()
 
@@ -185,6 +187,13 @@ function arrow (down) {
   }
 }
 
+function setCursorToClosest () {
+  const a = allA.find(el => el.innerText.toLocaleLowerCase().startsWith(path))
+  if (!a) { return }
+  storeLastArrowSrc(a.href)
+  restoreCursorPos()
+}
+
 function next () {
   if (getASelected().href) {
     window.location.href = getASelected().href
@@ -193,10 +202,7 @@ function next () {
 
 function prev () {
   if (window.location.origin === window.location.href.slice(0, -1)) { return }
-
-  const path = window.location.pathname.split('/')
-  path.pop()
-  path.pop()
+  const path = window.location.pathname.split('/').slice(0, -2)
   window.location.href = window.location.origin + path.join('/')
 }
 
@@ -228,7 +234,7 @@ function setImage (src) {
   src = src || allImgs[imgsIndex]
   picsLabel.innerText = src.split('/').pop()
   picsHolder.src = src
-  window.localStorage.setItem('last-selected' + window.location.href, src)
+  storeLastArrowSrc(src)
 }
 
 function picsOn (ifImgSelected) {
@@ -273,30 +279,56 @@ function picsNav (down) {
   return true
 }
 
-document.body.onkeydown = e => {
-  if (e.code === 'ArrowDown' || e.code === 'Tab') {
-    e.preventDefault()
-    picsNav(true) || arrow(true)
-  } else if (e.code === 'ArrowUp') {
-    e.preventDefault()
-    picsNav(false) || arrow(false)
-  } else if (e.code === 'Enter' || e.code === 'ArrowRight') {
-    e.preventDefault()
-    picsOn(true) || picsNav(true) || next()
-  } else if (e.code === 'ArrowLeft') {
-    e.preventDefault()
-    picsNav(false) || prev()
-  } else if (e.code === 'KeyN') {
-    e.preventDefault()
-    isPicMode() || mkdir()
-  } else if (e.code === 'KeyC') {
-    e.preventDefault()
-    isPicMode() || cpPath()
-  } else if (e.code === 'Escape' && isPicMode()) {
-    e.preventDefault()
-    picsToggle()
+let path = ''
+let clearPathToken = null
+
+document.body.addEventListener('keydown', e => {
+  switch (e.code) {
+    case 'Tab':
+    case 'ArrowDown':
+      e.preventDefault()
+      return picsNav(true) || arrow(true)
+
+    case 'ArrowUp':
+      e.preventDefault()
+      return picsNav(false) || arrow(false)
+
+    case 'ArrowRight':
+      e.preventDefault()
+      return picsOn(true) || picsNav(true) || next()
+
+    case 'ArrowLeft':
+      e.preventDefault()
+      return picsNav(false) || prev()
+
+    case 'Escape':
+      if (isPicMode) {
+        e.preventDefault()
+        return picsToggle()
+      }
   }
-}
+
+  // Ctrl keys
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.code) {
+      case 'KeyD':
+        e.preventDefault()
+        return isPicMode() || mkdir()
+
+      case 'KeyC':
+        e.preventDefault()
+        return isPicMode() || cpPath()
+    }
+  }
+
+  // Any other key, for text search
+  if (e.code.includes('Key')) {
+    path += e.code.replace('Key', '').toLocaleLowerCase()
+    window.clearTimeout(clearPathToken)
+    clearPathToken = setTimeout(() => { path = '' }, 1000)
+    setCursorToClosest()
+  }
+}, false)
 
 window.picsToggle = picsToggle
 window.picsNav = () => picsNav(true)
