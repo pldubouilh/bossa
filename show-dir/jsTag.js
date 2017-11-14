@@ -9,6 +9,13 @@ const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
 const invalidName = f => f.includes('/') || f.includes('\\') || f.includes('.')
 
+function mkdirCall (path, cb) {
+  const xhr = new window.XMLHttpRequest()
+  xhr.open('POST', window.location.origin + '/mkdir/' + path)
+  xhr.send()
+  xhr.onload = cb
+}
+
 function mkdir () {
   const folder = window.prompt('New folder name', '')
 
@@ -20,10 +27,7 @@ function mkdir () {
     return window.alert('Name already already exists')
   }
 
-  const xhr = new window.XMLHttpRequest()
-  xhr.open('POST', window.location.origin + '/mkdir/' + folder)
-  xhr.onload = () => window.location.reload()
-  xhr.send()
+  mkdirCall(folder, () => browseTo(window.location.href))
 }
 
 function warning (e) {
@@ -91,13 +95,10 @@ function parseDomItem (domFile, shoudCheckDupes) {
   }
 
   if (domFile.isFile) {
-    return domFile.file(f => postFile(f, domFile.fullPath || domFile.name))
+    domFile.file(f => postFile(f, domFile.fullPath || domFile.name))
+  } else {
+    mkdirCall(domFile.fullPath, () => parseDomFolder(domFile))
   }
-
-  const xhr = new window.XMLHttpRequest()
-  xhr.open('POST', window.location.origin + '/mkdir/' + domFile.fullPath)
-  xhr.send()
-  xhr.onload = () => parseDomFolder(domFile)
 }
 
 function pushEntry (entry) {
@@ -140,18 +141,20 @@ document.ondrop = (e) => {
 let totalUploads = 0
 let totalDone = 0
 
+const getArrowSelected = () => document.querySelectorAll('i.arrow-selected')[0]
+
 function getASelected () {
-  const dest = document.querySelectorAll('i.arrow-selected')[0]
+  const dest = getArrowSelected()
   return !dest ? false : dest.parentElement.parentElement.querySelectorAll('a')[0]
 }
 
 function scrollToArrow () {
-  const pos = document.querySelectorAll('.arrow-selected')[0].getBoundingClientRect()
+  const pos = getArrowSelected().getBoundingClientRect()
   window.scrollTo(0, pos.y)
 }
 
 function clearArrowSelected () {
-  const arr = document.querySelectorAll('.arrow-selected')[0]
+  const arr = getArrowSelected()
   if (!arr) { return }
   arr.classList.remove('arrow-selected')
 }
@@ -171,11 +174,12 @@ function restoreCursorPos () {
 
   const icon = a.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
   icon.classList.add('arrow-selected')
+  scrollToArrow()
 }
 
 const storeLastArrowSrc = src => window.localStorage.setItem('last-selected' + window.location.href, src)
 
-function arrow (down) {
+function moveArrow (down) {
   const all = Array.from(document.querySelectorAll('i.arrow-icon'))
   let i = all.findIndex(el => el.classList.contains('arrow-selected'))
 
@@ -208,7 +212,6 @@ function setCursorToClosest () {
   if (!a) { return }
   storeLastArrowSrc(a.href)
   restoreCursorPos()
-  scrollToArrow()
 }
 
 function browseTo (href) {
@@ -227,13 +230,13 @@ function browseTo (href) {
   }))
 }
 
-function next () {
+function nextPage () {
   const href = getASelected().href
   if (!href) { return }
   browseTo(href)
 }
 
-function prev () {
+function prevPage () {
   if (window.location.origin === window.location.href.slice(0, -1)) { return }
   const path = window.location.pathname.split('/').slice(0, -2).join('/')
   browseTo(window.location.origin + path)
@@ -293,7 +296,6 @@ function picsToggle () {
   } else {
     pics.style.display = 'none'
     restoreCursorPos()
-    scrollToArrow()
   }
 }
 
@@ -318,19 +320,19 @@ document.body.addEventListener('keydown', e => {
     case 'Tab':
     case 'ArrowDown':
       e.preventDefault()
-      return picsNav(true) || arrow(true)
+      return picsNav(true) || moveArrow(true)
 
     case 'ArrowUp':
       e.preventDefault()
-      return picsNav(false) || arrow(false)
+      return picsNav(false) || moveArrow(false)
 
     case 'ArrowRight':
       e.preventDefault()
-      return picsOn(true) || picsNav(true) || next()
+      return picsOn(true) || picsNav(true) || nextPage()
 
     case 'ArrowLeft':
       e.preventDefault()
-      return picsNav(false) || prev()
+      return picsNav(false) || prevPage()
 
     case 'Escape':
       if (isPicMode) {

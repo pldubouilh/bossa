@@ -26,8 +26,8 @@ npm i -g bossa
 
 ### Keyboard shortcuts
  * Arrows to browse through the files and pictures
- * C to copy path to clipboard
- * N to create directory
+ * Ctrl/Meta + C to copy path to clipboard
+ * Ctrl/Meta + D  to create a new directory
 
 ### Benchmark
 It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmarks are to come.
