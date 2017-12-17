@@ -3,11 +3,18 @@ function cancelDefault (e) {
   e.stopPropagation()
 }
 
-const allA = Array.from(document.querySelectorAll('a'))
+let allA = Array.from(document.querySelectorAll('a'))
 
 const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
 const invalidName = f => f.includes('/') || f.includes('\\') || f.includes('.')
+
+function mkdirCall (path, cb) {
+  const xhr = new window.XMLHttpRequest()
+  xhr.open('POST', window.location.origin + '/mkdir/' + path)
+  xhr.send()
+  xhr.onload = cb
+}
 
 function mkdir () {
   const folder = window.prompt('New folder name', '')
@@ -20,10 +27,7 @@ function mkdir () {
     return window.alert('Name already already exists')
   }
 
-  const xhr = new window.XMLHttpRequest()
-  xhr.open('POST', window.location.origin + '/mkdir/' + folder)
-  xhr.onload = () => window.location.reload()
-  xhr.send()
+  mkdirCall(folder, () => browseTo(window.location.href))
 }
 
 function warning (e) {
@@ -51,10 +55,13 @@ function updatePercent (id, percent) {
 
 function shouldRefresh () {
   totalDone += 1
-
   if (totalUploads === totalDone) {
     window.onbeforeunload = null
-    window.location.reload()
+    console.log('Done uploading ' + totalDone + ' files')
+    totalDone = 0
+    totalUploads = 0
+    document.getElementById('progressBars').innerHTML = ''
+    browseTo(window.location.href)
   }
 }
 
@@ -88,13 +95,10 @@ function parseDomItem (domFile, shoudCheckDupes) {
   }
 
   if (domFile.isFile) {
-    return domFile.file(f => postFile(f, domFile.fullPath || domFile.name))
+    domFile.file(f => postFile(f, domFile.fullPath || domFile.name))
+  } else {
+    mkdirCall(domFile.fullPath, () => parseDomFolder(domFile))
   }
-
-  const xhr = new window.XMLHttpRequest()
-  xhr.open('POST', window.location.origin + '/mkdir/' + domFile.fullPath)
-  xhr.send()
-  xhr.onload = () => parseDomFolder(domFile)
 }
 
 function pushEntry (entry) {
@@ -137,13 +141,20 @@ document.ondrop = (e) => {
 let totalUploads = 0
 let totalDone = 0
 
+const getArrowSelected = () => document.querySelectorAll('i.arrow-selected')[0]
+
 function getASelected () {
-  const dest = document.querySelectorAll('i.arrow-selected')[0]
+  const dest = getArrowSelected()
   return !dest ? false : dest.parentElement.parentElement.querySelectorAll('a')[0]
 }
 
+function scrollToArrow () {
+  const pos = getArrowSelected().getBoundingClientRect()
+  window.scrollTo(0, pos.y)
+}
+
 function clearArrowSelected () {
-  const arr = document.querySelectorAll('.arrow-selected')[0]
+  const arr = getArrowSelected()
   if (!arr) { return }
   arr.classList.remove('arrow-selected')
 }
@@ -151,13 +162,24 @@ function clearArrowSelected () {
 function restoreCursorPos () {
   clearArrowSelected()
   const hrefSelected = window.localStorage.getItem('last-selected' + window.location.href)
-  const elt = allA.find(el => el.href === hrefSelected)
-  if (!elt) { return }
-  const icon = elt.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
+  let a = allA.find(el => el.href === hrefSelected)
+
+  if (!a) {
+    if (allA[0].innerText === '../') {
+      a = allA[1]
+    } else {
+      a = allA[0]
+    }
+  }
+
+  const icon = a.parentElement.parentElement.querySelectorAll('.arrow-icon')[0]
   icon.classList.add('arrow-selected')
+  scrollToArrow()
 }
 
-function arrow (down) {
+const storeLastArrowSrc = src => window.localStorage.setItem('last-selected' + window.location.href, src)
+
+function moveArrow (down) {
   const all = Array.from(document.querySelectorAll('i.arrow-icon'))
   let i = all.findIndex(el => el.classList.contains('arrow-selected'))
 
@@ -170,7 +192,7 @@ function arrow (down) {
   }
 
   all[i].classList.add('arrow-selected')
-  window.localStorage.setItem('last-selected' + window.location.href, getASelected().href)
+  storeLastArrowSrc(getASelected().href)
 
   const itemPos = all[i].getBoundingClientRect()
 
@@ -179,25 +201,45 @@ function arrow (down) {
   } else if (i === all.length - 1) {
     window.scrollTo(0, document.documentElement.scrollHeight)
   } else if (itemPos.top < 0) {
-    window.scrollBy(0, -150)
+    window.scrollBy(0, -200)
   } else if (itemPos.bottom > window.innerHeight) {
-    window.scrollBy(0, 150)
+    window.scrollBy(0, 200)
   }
 }
 
-function next () {
-  if (getASelected().href) {
-    window.location.href = getASelected().href
-  }
+function setCursorToClosest () {
+  const a = allA.find(el => el.innerText.toLocaleLowerCase().startsWith(path))
+  if (!a) { return }
+  storeLastArrowSrc(a.href)
+  restoreCursorPos()
 }
 
-function prev () {
+function browseTo (href) {
+  window.fetch(href).then(r => r.text().then(t => {
+    const parsed = new window.DOMParser().parseFromString(t, 'text/html')
+
+    const table = parsed.querySelectorAll('table')[0].innerHTML
+    document.body.querySelectorAll('table')[0].innerHTML = table
+
+    const title = parsed.head.querySelectorAll('title')[0].innerText
+    document.head.querySelectorAll('title')[0].innerText = title
+    document.body.querySelectorAll('h1')[0].innerText = '.' + title
+
+    window.history.pushState(title, title, title)
+    init()
+  }))
+}
+
+function nextPage () {
+  const href = getASelected().href
+  if (!href) { return }
+  browseTo(href)
+}
+
+function prevPage () {
   if (window.location.origin === window.location.href.slice(0, -1)) { return }
-
-  const path = window.location.pathname.split('/')
-  path.pop()
-  path.pop()
-  window.location.href = window.location.origin + path.join('/')
+  const path = window.location.pathname.split('/').slice(0, -2).join('/')
+  browseTo(window.location.origin + path)
 }
 
 function cpPath () {
@@ -218,17 +260,14 @@ const isPic = src => src && picTypes.find(type => src.toLocaleLowerCase().includ
 
 const isPicMode = () => pics.style.display === 'flex'
 
-let imgsIndex = 0
-const allImgs = allA.map(el => el.href).filter(isPic)
-if (allImgs.length === 0) {
-  document.getElementById('picsToggle').style.display = 'none'
-}
+let imgsIndex
+let allImgs
 
 function setImage (src) {
   src = src || allImgs[imgsIndex]
   picsLabel.innerText = src.split('/').pop()
   picsHolder.src = src
-  window.localStorage.setItem('last-selected' + window.location.href, src)
+  storeLastArrowSrc(src)
 }
 
 function picsOn (ifImgSelected) {
@@ -273,34 +312,80 @@ function picsNav (down) {
   return true
 }
 
-document.body.onkeydown = e => {
-  if (e.code === 'ArrowDown' || e.code === 'Tab') {
-    e.preventDefault()
-    picsNav(true) || arrow(true)
-  } else if (e.code === 'ArrowUp') {
-    e.preventDefault()
-    picsNav(false) || arrow(false)
-  } else if (e.code === 'Enter' || e.code === 'ArrowRight') {
-    e.preventDefault()
-    picsOn(true) || picsNav(true) || next()
-  } else if (e.code === 'ArrowLeft') {
-    e.preventDefault()
-    picsNav(false) || prev()
-  } else if (e.code === 'KeyN') {
-    e.preventDefault()
-    isPicMode() || mkdir()
-  } else if (e.code === 'KeyC') {
-    e.preventDefault()
-    isPicMode() || cpPath()
-  } else if (e.code === 'Escape' && isPicMode()) {
-    e.preventDefault()
-    picsToggle()
+let path = ''
+let clearPathToken = null
+
+document.body.addEventListener('keydown', e => {
+  switch (e.code) {
+    case 'Tab':
+    case 'ArrowDown':
+      e.preventDefault()
+      return picsNav(true) || moveArrow(true)
+
+    case 'ArrowUp':
+      e.preventDefault()
+      return picsNav(false) || moveArrow(false)
+
+    case 'ArrowRight':
+      e.preventDefault()
+      return picsOn(true) || picsNav(true) || nextPage()
+
+    case 'ArrowLeft':
+      e.preventDefault()
+      return picsNav(false) || prevPage()
+
+    case 'Escape':
+      if (isPicMode) {
+        e.preventDefault()
+        return picsToggle()
+      }
   }
+
+  // Ctrl keys
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.code) {
+      case 'KeyD':
+        e.preventDefault()
+        return isPicMode() || mkdir()
+
+      case 'KeyC':
+        e.preventDefault()
+        return isPicMode() || cpPath()
+    }
+  }
+
+  // Any other key, for text search
+  if (e.code.includes('Key')) {
+    path += e.code.replace('Key', '').toLocaleLowerCase()
+    window.clearTimeout(clearPathToken)
+    clearPathToken = setTimeout(() => { path = '' }, 1000)
+    setCursorToClosest()
+  }
+}, false)
+
+function partialBrowseOnClickFolders () {
+  allA.forEach(a => {
+    if (!a.innerText.endsWith('/')) { return }
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      browseTo(e.target.href)
+    })
+  }, false)
 }
+
+function init () {
+  allA = Array.from(document.querySelectorAll('a'))
+  allImgs = allA.map(el => el.href).filter(isPic)
+  document.getElementById('picsToggle').style.display = allImgs.length > 0 ? 'flex' : 'none'
+
+  imgsIndex = 0
+  partialBrowseOnClickFolders()
+  restoreCursorPos()
+  console.log('Browsed to ' + window.location.href)
+}
+
+init()
 
 window.picsToggle = picsToggle
 window.picsNav = () => picsNav(true)
 window.mkdir = mkdir
-
-restoreCursorPos()
-console.log('File upload set')

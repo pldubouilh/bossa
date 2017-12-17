@@ -19,59 +19,21 @@ function sizeToString (bytes) {
   return bytes.toFixed(1) + units[u]
 }
 
-function render (parsed, pathname, dirs, files) {
-  let html = `<!doctype html><html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <title>${he.encode(pathname)}</title>
-    <title>${he.encode(pathname)}</title>
-    <script>window.onload = function(){${jsTag}}</script>
-    <style type="text/css">${css}</style>
-  </head>
-  <body>
-    <div onclick="window.mkdir()" id="newFolder"></div>
-    <div onclick="window.picsToggle()" id="picsToggle"></div>
-    <div id="pics" style="display:none;"> <div onclick="window.picsToggle()" id="picsToggleCinema"></div> <img  onclick="window.picsNav()" id="picsHolder"/> <span id="picsLabel"></span> </div>
-    <div id="drop-grid"> Drop here to upload </div>
-    <div id="progressBars"></div>
-    <h1>.${he.encode(pathname)}</h1>
-    <table>
-  `
+const writeRow = (name, file, parsed) => {
+  let href = `${parsed.pathname.replace(/\/$/, '')}/${encodeURIComponent(name)}`
+  let displayName = he.encode(name)
+  displayName += file.isDirectory() ? '/' : ''
 
-  const writeRow = file => {
-    // render a row given a [name, stat] tuple
-    const isDir = file[1].isDirectory && file[1].isDirectory()
-    let href = `${parsed.pathname.replace(/\/$/, '')}/${encodeURIComponent(file[0])}`
+  const ext = name.split('.').pop()
+  const iconClass = file.isDirectory() ? 'folder' : ext.toLowerCase()
+  const sizeString = file.isDirectory() ? '0' : sizeToString(file.size)
 
-    // append trailing slash and query for dir entry
-    if (isDir) {
-      href += `/${he.encode((parsed.search) ? parsed.search : '')}`
-    }
-
-    let displayName = he.encode(file[0])
-    displayName += isDir ? '/' : ''
-
-    const ext = file[0].split('.').pop()
-    const iconClass = isDir ? 'folder' : ext.toLowerCase()
-    const sizeString = isDir ? '0' : sizeToString(file[1].size)
-
-    html += `<tr>
-              <td><i class="btn icon icon-${iconClass} icon-blank"></i></td>
-              <td class="file-size"><code>${sizeString}</code></td>
-              <td class="arrow"><i class="arrow-icon"></i></td>
-              <td class="display-name"><a href="${href}">${displayName}</a></td>
-            </tr>`
-  }
-
-  dirs.sort((a, b) => a[0].toString().localeCompare(b[0].toString())).forEach(writeRow)
-  files.sort((a, b) => a.toString().localeCompare(b.toString())).forEach(writeRow)
-
-  html += `</table>
-          <br><address>Node.js ${process.version} / <a href="https://github.com/pldubouilh/bossa">Bossa  🎶</a></address>
-          </body></html>`
-
-  return html
+  return `<tr>
+            <td><i class="btn icon icon-${iconClass} icon-blank"></i></td>
+            <td class="file-size"><code>${sizeString}</code></td>
+            <td class="arrow"><i class="arrow-icon"></i></td>
+            <td class="display-name"><a href="${href}">${displayName}</a></td>
+          </tr>`
 }
 
 function reply (res, status, what) {
@@ -87,27 +49,48 @@ module.exports = async function resolve (rootFolder, req, res) {
     const dir = path.normalize(path.join(rootFolder, path.relative('/', pathname)))
 
     await fs.stat(dir)
-    const files = []
-    const dirs = []
 
     let _files = await fs.readdir(dir)
     _files = _files.filter(f => f.slice(0, 1) !== '.')
 
-    for (let file of _files) {
-      const s = await fs.stat(path.join(dir, file))
-      if (s && s.isDirectory()) {
-        dirs.push([file, s])
-      } else if (s && s.isFile()) {
-        files.push([file, s])
-      }
-    }
+    const head = `<!doctype html><html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width">
+      <title>${he.encode(pathname)}</title>
+      <script>window.onload = function(){${jsTag}}</script>
+      <style type="text/css">${css}</style>
+    </head>
+    <body>
+      <div onclick="window.mkdir()" id="newFolder"></div>
+      <div onclick="window.picsToggle()" id="picsToggle"></div>
+      <div id="pics" style="display:none;"> <div onclick="window.picsToggle()" id="picsToggleCinema"></div> <img  onclick="window.picsNav()" id="picsHolder"/> <span id="picsLabel"></span> </div>
+      <div id="drop-grid"> Drop here to upload </div>
+      <div id="progressBars"></div>
+      <h1>.${he.encode(pathname)}</h1>
+      <table>`
+
+    let dirs = ''
+    let files = ''
 
     if (pathname !== '/') {
       const s = await fs.stat(path.join(dir, '..'))
-      dirs.unshift(['..', s])
+      dirs += writeRow('..', s, parsed)
     }
 
-    reply(res, 200, render(parsed, pathname, dirs, files))
+    for (let fname of _files) {
+      const s = await fs.stat(path.join(dir, fname))
+      if (s && s.isDirectory()) {
+        dirs += writeRow(fname, s, parsed)
+      } else if (s && s.isFile()) {
+        files += writeRow(fname, s, parsed)
+      }
+    }
+
+    let body = head + dirs + files + `</table>
+          <br><address>Node.js ${process.version} / <a href="https://github.com/pldubouilh/bossa">Bossa  🎶</a></address>
+          </body></html>`
+    reply(res, 200, body)
   } catch (e) {
     console.error(e)
     reply(res, 500, ':(')
