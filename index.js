@@ -4,6 +4,8 @@ const express = require('express')
 const app = express()
 const Busboy = require('busboy')
 const fs = require('fs-extra')
+const path = require('path')
+const bodyParser = require('body-parser')
 const dirHandler = require('./show-dir')
 
 function die (msg, code) {
@@ -37,43 +39,56 @@ app.get('*', (req, res, next) => {
   }
 })
 
-function resolveFolder (req) {
-  const currentUrl = decodeURIComponent(req.headers.referer)
-  return servingFolder + currentUrl.split(req.headers.host).pop()
+function isValidPath (p) {
+  p = servingFolder + '/' + p
+  if (path.normalize(p).startsWith(servingFolder)) {
+    return p
+  } else {
+    throw new Error('Invalid path')
+  }
 }
 
-function mkdir (req, res) {
-  const name = resolveFolder(req) + req.params[0].replace('/mkdir/', '')
-  fs.mkdirp(name, err => {
-    if (err) return console.error(err)
-    res.writeHead(200, { 'Connection': 'close' })
-    res.end('done')
-  })
+function isValidRpc (call) {
+  if (call.includes('move') || call.includes('remove') || call.includes('mkdirp')) {
+    return call
+  } else {
+    throw new Error('Invalid instruction')
+  }
 }
 
-function postFile (req, res) {
+const jsonParser = bodyParser.json()
+
+app.post('/rpc/', jsonParser, async (req, res) => {
+  let err
+  try {
+    const call = isValidRpc(req.body.call)
+    const args = req.body.args.map(isValidPath)
+    args[1] ? await fs[call](args[0], args[1]) : await fs[call](args[0])
+  } catch (e) { err = e }
+
+  res.writeHead(200, { 'Connection': 'close' })
+  res.end(err ? err.message : 'done')
+})
+
+app.post('/post/*', (req, res) => {
   const extraPath = req.params[0].replace('/post/', '')
   const busboy = new Busboy({ headers: req.headers })
+  let err
 
   busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-    const where = resolveFolder(req) + extraPath
-    file.pipe(fs.createWriteStream(where))
+    try {
+      const pwd = decodeURIComponent(req.headers.referer).split(req.headers.host).pop()
+      const p = isValidPath(pwd + extraPath)
+      file.pipe(fs.createWriteStream(p))
+    } catch (e) { err = e }
   })
 
   busboy.on('finish', () => {
     res.writeHead(200, { 'Connection': 'close' })
-    res.end('done')
+    res.end(err ? err.message : 'done')
   })
 
   return req.pipe(busboy)
-}
-
-app.post('*', (req, res) => {
-  if (req.params[0].startsWith('/mkdir/')) {
-    mkdir(req, res)
-  } else if (req.params[0].startsWith('/post/')) {
-    postFile(req, res)
-  }
 })
 
 app.use(express.static(servingFolder))
