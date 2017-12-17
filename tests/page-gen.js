@@ -124,11 +124,46 @@ test('HTTP GET utf8 file', async function (t) {
 test('HTTP POST Mkdir', async function (t) {
   t.plan(2)
   try {
-    const body = await request.post({ url: 'http://127.0.0.1:9991/mkdir/a', headers })
+    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'mkdirp', args: ['abcdef'] } })
     if (body === 'done') { t.pass('') }
 
-    const s = await fs.stat(path.join(__dirname, '/fixture/a'))
+    const s = await fs.stat(path.join(__dirname, '/fixture/abcdef'))
     if (s.isDirectory()) { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST Move', async function (t) {
+  t.plan(2)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'move', args: ['abcdef', 'aaa'] } })
+    if (body === 'done') { t.pass('') }
+
+    const s = await fs.stat(path.join(__dirname, '/fixture/aaa'))
+    if (s.isDirectory()) { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST Rm', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'remove', args: ['aaa'] } })
+    if (body === 'done') { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST Invalid call', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'writeJson', args: ['uuu'] } })
+    if (body === 'Invalid instruction') { t.pass('') }
+  } catch (error) { t.fail(error) }
+})
+
+test('HTTP POST Invalid path', async function (t) {
+  t.plan(1)
+  try {
+    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'mkdirp', args: ['../abcdef'] } })
+    if (body === 'Invalid path') { t.pass('') }
   } catch (error) { t.fail(error) }
 })
 

@@ -7,22 +7,27 @@ let allA = Array.from(document.querySelectorAll('a'))
 
 const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
-const invalidName = f => f.includes('/') || f.includes('\\') || f.includes('.')
+function rpcFs (call, args, cb) {
+  args = args.map(a => window.location.pathname + a)
 
-function mkdirCall (path, cb) {
   const xhr = new window.XMLHttpRequest()
-  xhr.open('POST', window.location.origin + '/mkdir/' + path)
-  xhr.send()
+  xhr.open('POST', window.location.origin + '/rpc/')
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8')
+  xhr.send(JSON.stringify({call, args}))
   xhr.onload = cb
 }
+
+const mkdirCall = (path, cb) => rpcFs('mkdirp', [path], cb)
+
+// const rmCall = (path, cb) => rpcFs('remove', [path], cb)
+
+// const mvCall = (path1, path2, cb) => rpcFs('move', [path1, path2], cb)
 
 function mkdir () {
   const folder = window.prompt('New folder name', '')
 
   if (!folder) {
     return
-  } else if (invalidName(folder)) {
-    return window.alert('Invalid foldername')
   } else if (checkDupes(folder)) {
     return window.alert('Name already already exists')
   }
