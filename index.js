@@ -19,7 +19,7 @@ Because bossa-nova is so much better than samba
 
 -h  displays this message
 -p  sets the port to listen to  - default 8080
--l  sets the host to listen to  - default to any
+-l  sets the host to listen to  - default to 127.0.0.1 - set multiple values with multiple -l params
 
 e.g. bossa ~/Documents
      bossa -p 9090 ~/Documents
@@ -27,9 +27,18 @@ e.g. bossa ~/Documents
 More at https://github.com/pldubouilh/bossa`, 0)
 }
 
-const host = argv.l
+const host = !argv.l ? ['127.0.0.1'] : typeof argv.l === 'string' ? [argv.l] : argv.l
 const port = argv.p || 8080
 const servingFolder = argv._[0] || __dirname
+
+app.all('*', (req, res, next) => {
+  if (host.includes(req.hostname)) {
+    next()
+  } else {
+    res.writeHead(403, { 'Connection': 'close' })
+    res.end()
+  }
+})
 
 app.get('*', (req, res, next) => {
   if (req.url.endsWith('/')) {
@@ -49,16 +58,14 @@ function isValidPath (p) {
 }
 
 function isValidRpc (call) {
-  if (call.includes('move') || call.includes('remove') || call.includes('mkdirp')) {
+  if (['move', 'remove', 'mkdirp'].includes(call)) {
     return call
   } else {
     throw new Error('Invalid instruction')
   }
 }
 
-const jsonParser = bodyParser.json()
-
-app.post('/rpc/', jsonParser, async (req, res) => {
+app.post('/rpc/', bodyParser.json(), async (req, res) => {
   let err
   try {
     const call = isValidRpc(req.body.call)
@@ -66,7 +73,7 @@ app.post('/rpc/', jsonParser, async (req, res) => {
     args[1] ? await fs[call](args[0], args[1]) : await fs[call](args[0])
   } catch (e) { err = e }
 
-  res.writeHead(200, { 'Connection': 'close' })
+  res.writeHead(err ? 403 : 200, { 'Connection': 'close' })
   res.end(err ? err.message : 'done')
 })
 
@@ -84,7 +91,7 @@ app.post('/post/*', (req, res) => {
   })
 
   busboy.on('finish', () => {
-    res.writeHead(200, { 'Connection': 'close' })
+    res.writeHead(err ? 403 : 200, { 'Connection': 'close' })
     res.end(err ? err.message : 'done')
   })
 
@@ -95,5 +102,5 @@ app.use(express.static(servingFolder))
 
 app.listen(port, host, (err) => {
   if (err) die(err, 1)
-  console.log(`Serving : ${servingFolder} at http://${host || '127.0.0.1'}:${port}`)
+  console.log(`Serving : ${servingFolder} at ${host.map(t => '\r\n  http://' + t + ':' + port)}`)
 })

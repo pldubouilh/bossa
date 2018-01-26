@@ -97,12 +97,21 @@ const defaultBody = trimSpaces(`   <body>
 const headers = { Referer: 'http://127.0.0.1:9991/' }
 const formData = { file: fs.createReadStream(path.join(__dirname, '/page-gen.js')) }
 
-test('HTTP GET list', async function (t) {
+test('HTTP GET list of files', async function (t) {
   t.plan(1)
   try {
     const body = await request('http://127.0.0.1:9991')
     if (trimSpaces(body).includes(defaultBody)) { t.pass('') }
   } catch (error) { t.fail(error) }
+})
+
+test('HTTP GET list fails : invalid hostname', async function (t) {
+  t.plan(1)
+  try {
+    await request('http://localhost:9991')
+  } catch (error) {
+    t.deepEqual(error.statusCode, 403)
+  }
 })
 
 test('HTTP GET file', async function (t) {
@@ -113,7 +122,7 @@ test('HTTP GET file', async function (t) {
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP GET utf8 file', async function (t) {
+test('HTTP GET file - utf8 filename', async function (t) {
   t.plan(1)
   try {
     const body = await request('http://127.0.0.1:9991/%E4%B8%AD%E6%96%87/%E6%AA%94%E6%A1%88.html')
@@ -121,7 +130,7 @@ test('HTTP GET utf8 file', async function (t) {
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP POST Mkdir', async function (t) {
+test('HTTP RPC POST Mkdir', async function (t) {
   t.plan(2)
   try {
     const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'mkdirp', args: ['abcdef'] } })
@@ -132,7 +141,7 @@ test('HTTP POST Mkdir', async function (t) {
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP POST Move', async function (t) {
+test('HTTP RPC POST Move', async function (t) {
   t.plan(2)
   try {
     const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'move', args: ['abcdef', 'aaa'] } })
@@ -143,35 +152,39 @@ test('HTTP POST Move', async function (t) {
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP POST Rm', async function (t) {
+test('HTTP RPC POST Rm', async function (t) {
   t.plan(1)
   try {
     const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'remove', args: ['aaa'] } })
-    if (body === 'done') { t.pass('') }
+    t.deepEqual(body, 'done')
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP POST Invalid call', async function (t) {
-  t.plan(1)
+test('HTTP RPC POST fails : Invalid instruction', async function (t) {
+  t.plan(2)
   try {
-    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'writeJson', args: ['uuu'] } })
-    if (body === 'Invalid instruction') { t.pass('') }
-  } catch (error) { t.fail(error) }
+    await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'writeJson', args: ['uuu'] } })
+  } catch (error) {
+    t.deepEqual(error.statusCode, 403)
+    t.deepEqual(error.error, 'Invalid instruction')
+  }
 })
 
-test('HTTP POST Invalid path', async function (t) {
-  t.plan(1)
+test('HTTP RPC POST fails : Invalid path', async function (t) {
+  t.plan(2)
   try {
-    const body = await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'mkdirp', args: ['../abcdef'] } })
-    if (body === 'Invalid path') { t.pass('') }
-  } catch (error) { t.fail(error) }
+    await request.post({ url: 'http://127.0.0.1:9991/rpc', json: { call: 'mkdirp', args: ['../abcdef'] } })
+  } catch (error) {
+    t.deepEqual(error.statusCode, 403)
+    t.deepEqual(error.error, 'Invalid path')
+  }
 })
 
-test('HTTP POST File', async function (t) {
+test('HTTP POST file upload', async function (t) {
   t.plan(2)
   try {
     const body = await request.post({ url: 'http://127.0.0.1:9991/post/testfile.js', headers, formData })
-    if (body === 'done') { t.pass('') }
+    t.deepEqual(body, 'done')
 
     const s = await fs.stat(path.join(__dirname, '/fixture/testfile.js'))
     if (s.isFile()) { t.pass('') }

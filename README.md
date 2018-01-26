@@ -13,7 +13,7 @@ Because bossa-nova is so much better than samba
 
 -h  displays this message
 -p  sets the port to listen to  - default 8080
--l  sets the host to listen to  - default to any
+-l  sets the host to listen to  - default to 127.0.0.1 - set multiple values with multiple -l params
 
 e.g. bossa ~/Documents
      bossa -l 127.0.0.1 -p 9090 ~/Documents
