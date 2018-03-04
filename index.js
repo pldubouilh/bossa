@@ -29,7 +29,8 @@ More at https://github.com/pldubouilh/bossa`, 0)
 
 const host = !argv.l ? ['127.0.0.1'] : typeof argv.l === 'string' ? [argv.l] : argv.l
 const port = argv.p || 8080
-const servingFolder = argv._[0] || __dirname
+let servingFolder = argv._[0] || __dirname
+servingFolder = servingFolder.endsWith('/') ? servingFolder : servingFolder + '/'
 
 app.all('*', (req, res, next) => {
   if (host.includes(req.hostname)) {
@@ -49,7 +50,9 @@ app.get('*', (req, res, next) => {
 })
 
 function isValidPath (p) {
-  p = servingFolder + '/' + p
+  p = decodeURIComponent(p)
+  p = servingFolder + (p.startsWith('/') ? p.slice(1) : p)
+
   if (path.normalize(p).startsWith(servingFolder)) {
     return p
   } else {

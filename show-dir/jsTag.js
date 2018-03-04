@@ -8,6 +8,7 @@ let allA = Array.from(document.querySelectorAll('a'))
 const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
 function rpcFs (call, args, cb) {
+  args = args.map(a => a.startsWith('/') ? a.slice(1) : a)
   args = args.map(a => window.location.pathname + a)
 
   const xhr = new window.XMLHttpRequest()
