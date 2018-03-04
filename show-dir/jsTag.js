@@ -231,15 +231,15 @@ function browseTo (href) {
     document.head.querySelectorAll('title')[0].innerText = title
     document.body.querySelectorAll('h1')[0].innerText = '.' + title
 
-    window.history.pushState(title, title, title)
+    window.history.pushState({}, '', title)
     init()
   }))
 }
 
 function nextPage () {
-  const href = getASelected().href
-  if (!href) { return }
-  browseTo(href)
+  const a = getASelected()
+  if (!a.href || !a.innerText.endsWith('/')) { return }
+  browseTo(a.href)
 }
 
 function prevPage () {
