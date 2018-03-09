@@ -13,10 +13,13 @@ Because bossa-nova is so much better than samba
 
 -h  displays this message
 -p  sets the port to listen to  - default 8080
--l  sets the host to listen to  - default to 127.0.0.1 - set multiple values with multiple -l params
+-l  sets the host to listen to  - default to 127.0.0.1
+
+Note: bossa aggressively drops the connection if host is invalid
+Use multiple -l params to accept multiple hostnames
 
 e.g. bossa ~/Documents
-     bossa -l 127.0.0.1 -p 9090 ~/Documents
+     bossa -l 127.0.0.1 -l mac.local ~/Documents
 ```
 
 ### Install
@@ -39,7 +42,7 @@ It fills my local AC wifi network bandwidth (75MB/s), but more accurate benchmar
 - [x] Some tests
 - [x] Keyboard shortcuts
 - [x] Image slideshow
-- [ ] More tests
+- [x] More tests
 - [ ] Babel client script code
 - [ ] Allow more file handling (remove)
 - [ ] Password protect ? (implies TLS)

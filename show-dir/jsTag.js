@@ -8,6 +8,7 @@ let allA = Array.from(document.querySelectorAll('a'))
 const checkDupes = test => allA.find(a => a.innerText.replace('/', '') === test)
 
 function rpcFs (call, args, cb) {
+  args = args.map(a => a.startsWith('/') ? a.slice(1) : a)
   args = args.map(a => window.location.pathname + a)
 
   const xhr = new window.XMLHttpRequest()
@@ -32,7 +33,7 @@ function mkdir () {
     return window.alert('Name already already exists')
   }
 
-  mkdirCall(folder, () => browseTo(window.location.href))
+  mkdirCall(folder, () => browseTo(currentLocation))
 }
 
 function warning (e) {
@@ -66,7 +67,7 @@ function shouldRefresh () {
     totalDone = 0
     totalUploads = 0
     document.getElementById('progressBars').innerHTML = ''
-    browseTo(window.location.href)
+    browseTo(currentLocation)
   }
 }
 
@@ -166,7 +167,7 @@ function clearArrowSelected () {
 
 function restoreCursorPos () {
   clearArrowSelected()
-  const hrefSelected = window.localStorage.getItem('last-selected' + window.location.href)
+  const hrefSelected = window.localStorage.getItem('last-selected' + currentLocation)
   let a = allA.find(el => el.href === hrefSelected)
 
   if (!a) {
@@ -182,7 +183,7 @@ function restoreCursorPos () {
   scrollToArrow()
 }
 
-const storeLastArrowSrc = src => window.localStorage.setItem('last-selected' + window.location.href, src)
+const storeLastArrowSrc = src => window.localStorage.setItem('last-selected' + currentLocation, src)
 
 function moveArrow (down) {
   const all = Array.from(document.querySelectorAll('i.arrow-icon'))
@@ -219,7 +220,11 @@ function setCursorToClosest () {
   restoreCursorPos()
 }
 
+window.onpopstate = prevPage
+
 function browseTo (href) {
+  currentLocation = href
+
   window.fetch(href).then(r => r.text().then(t => {
     const parsed = new window.DOMParser().parseFromString(t, 'text/html')
 
@@ -230,21 +235,21 @@ function browseTo (href) {
     document.head.querySelectorAll('title')[0].innerText = title
     document.body.querySelectorAll('h1')[0].innerText = '.' + title
 
-    window.history.pushState(title, title, title)
+    window.history.pushState({}, '', title)
     init()
   }))
 }
 
 function nextPage () {
-  const href = getASelected().href
-  if (!href) { return }
-  browseTo(href)
+  const a = getASelected()
+  if (!a.href || !a.innerText.endsWith('/')) { return }
+  browseTo(a.href)
 }
 
 function prevPage () {
-  if (window.location.origin === window.location.href.slice(0, -1)) { return }
-  const path = window.location.pathname.split('/').slice(0, -2).join('/')
-  browseTo(window.location.origin + path)
+  if (window.location.origin === currentLocation.slice(0, -1)) { return }
+  const path = currentLocation.split('/').slice(0, -1).join('/')
+  browseTo(path)
 }
 
 function cpPath () {
@@ -373,6 +378,7 @@ function partialBrowseOnClickFolders () {
     if (!a.innerText.endsWith('/')) { return }
     a.addEventListener('click', e => {
       e.preventDefault()
+      storeLastArrowSrc(e.target.href)
       browseTo(e.target.href)
     })
   }, false)
@@ -386,8 +392,10 @@ function init () {
   imgsIndex = 0
   partialBrowseOnClickFolders()
   restoreCursorPos()
-  console.log('Browsed to ' + window.location.href)
+  console.log('Browsed to ' + currentLocation)
 }
+
+let currentLocation = window.location.href
 
 init()
 
