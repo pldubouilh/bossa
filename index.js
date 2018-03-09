@@ -19,18 +19,21 @@ Because bossa-nova is so much better than samba
 
 -h  displays this message
 -p  sets the port to listen to  - default 8080
--l  sets the host to listen to  - default to 127.0.0.1 - set multiple values with multiple -l params
+-l  sets the host to listen to  - default to 127.0.0.1
+
+Note: bossa aggressively drops the connection if host is invalid
+Use multiple -l params to accept multiple hostnames
 
 e.g. bossa ~/Documents
-     bossa -p 9090 ~/Documents
-
-More at https://github.com/pldubouilh/bossa`, 0)
+     bossa -l 127.0.0.1 -l mac.local ~/Documents`, 0)
 }
 
 const host = !argv.l ? ['127.0.0.1'] : typeof argv.l === 'string' ? [argv.l] : argv.l
 const port = argv.p || 8080
 let servingFolder = argv._[0] || __dirname
 servingFolder = servingFolder.endsWith('/') ? servingFolder : servingFolder + '/'
+
+app.disable('x-powered-by')
 
 app.all('*', (req, res, next) => {
   if (host.includes(req.hostname)) {
