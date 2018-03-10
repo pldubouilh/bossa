@@ -1,6 +1,6 @@
 {
   "name": "bossa",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Fast and simple http server that allows slightly more",
   "main": "index.js",
   "bin": {

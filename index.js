@@ -21,28 +21,15 @@ Because bossa-nova is so much better than samba
 -p  sets the port to listen to  - default 8080
 -l  sets the host to listen to  - default to 127.0.0.1
 
-Note: bossa aggressively drops the connection if host is invalid
-Use multiple -l params to accept multiple hostnames
-
-e.g. bossa ~/Documents
-     bossa -l 127.0.0.1 -l mac.local ~/Documents`, 0)
+e.g. bossa ~/Documents`, 0)
 }
 
-const host = !argv.l ? ['127.0.0.1'] : typeof argv.l === 'string' ? [argv.l] : argv.l
+const host = argv.l || '127.0.0.1'
 const port = argv.p || 8080
 let servingFolder = argv._[0] || __dirname
 servingFolder = servingFolder.endsWith('/') ? servingFolder : servingFolder + '/'
 
 app.disable('x-powered-by')
-
-app.all('*', (req, res, next) => {
-  if (host.includes(req.hostname)) {
-    next()
-  } else {
-    res.writeHead(403, { 'Connection': 'close' })
-    res.end()
-  }
-})
 
 app.get('*', (req, res, next) => {
   if (req.url.endsWith('/')) {
@@ -108,5 +95,5 @@ app.use(express.static(servingFolder))
 
 app.listen(port, host, (err) => {
   if (err) die(err, 1)
-  console.log(`Serving : ${servingFolder} at ${host.map(t => '\r\n  http://' + t + ':' + port)}`)
+  console.log(`Serving : ${servingFolder} at http://${host}:${port}`)
 })

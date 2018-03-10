@@ -15,11 +15,7 @@ Because bossa-nova is so much better than samba
 -p  sets the port to listen to  - default 8080
 -l  sets the host to listen to  - default to 127.0.0.1
 
-Note: bossa aggressively drops the connection if host is invalid
-Use multiple -l params to accept multiple hostnames
-
 e.g. bossa ~/Documents
-     bossa -l 127.0.0.1 -l mac.local ~/Documents
 ```
 
 ### Install
