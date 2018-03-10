@@ -105,15 +105,6 @@ test('HTTP GET list of files', async function (t) {
   } catch (error) { t.fail(error) }
 })
 
-test('HTTP GET list fails : invalid hostname', async function (t) {
-  t.plan(1)
-  try {
-    await request('http://localhost:9991')
-  } catch (error) {
-    t.deepEqual(error.statusCode, 403)
-  }
-})
-
 test('HTTP GET file', async function (t) {
   t.plan(1)
   try {
